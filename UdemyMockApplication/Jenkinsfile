@@ -46,7 +46,7 @@ pipeline {
             steps {
                 
                 sh """
-                cd ../kube 
+                cd kube 
                    sed -i 's|image: .*|image: ${IMAGE_NAME}:${env.IMAGE_TAG}|g' deployment.yaml
                 """
             }
