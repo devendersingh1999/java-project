@@ -55,9 +55,10 @@ pipeline {
         stage('Deploy to Kubernetes Cluster') {
             steps {
                 sh """
-                    cd kube
+                
+                    cd kuber
                     echo "Deploying staging"
-                    export KUBECONFIG=${KUBE_CONFIG}
+                    
                     kubectl apply -f deployment.yaml
                     kubectl apply -f mysql-deploy-svc.yaml
                     echo "waiting for stable deployment"
