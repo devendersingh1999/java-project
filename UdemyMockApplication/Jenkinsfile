@@ -1,0 +1,72 @@
+pipeline {
+    agent any
+    environment {
+        DOCKERHUB_CREDENTIALS = 'dockerhub-cred'
+        DOCKERHUB_USERNAME = 'devender1999'
+        IMAGE_NAME = "${DOCKERHUB_USERNAME}/ci-cd"
+        KUBE_CONFIG = '/var/lib/jenkins/.kube/config'
+        DEPLOYMENT_STRATEGY = 'Blue-Green'
+    }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    def commitid = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+                    env.IMAGE_TAG = commitid
+                   
+                    sh """
+                        sudo docker build -t ${IMAGE_NAME}:${env.IMAGE_TAG} .
+                    """
+                }
+            }
+        }
+
+        stage('Push Docker Image to DockerHub') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: DOCKERHUB_CREDENTIALS, 
+                                                  usernameVariable: 'DOCKERHUB_USER', 
+                                                  passwordVariable: 'DOCKERHUB_PASS')]) {
+                    sh """
+                        echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin
+                        docker push ${IMAGE_NAME}:${env.IMAGE_TAG}
+                        docker logout
+                    """
+                }
+            }
+        }
+        stage('update kubernetes manifests') {
+            steps {
+                
+                sh """
+                cd ../kube 
+                   sed -i 's|image: .*|image: ${IMAGE_NAME}:${env.IMAGE_TAG}|g' deployment.yaml
+                """
+            }
+        }
+        stage('Deploy to Kubernetes Cluster') {
+            steps {
+                sh """
+                    echo "Deploying staging"
+                    export KUBECONFIG=${KUBE_CONFIG}
+                    kubectl apply -f ../kube/deployment.yaml
+                    kubectl apply -f ../kube/mysql-deploy-svc.yaml
+                    echo "waiting for stable deployment"
+                    kubectl rollout status deployment/myapp-blue -n project --timeout=120s
+                    """
+            }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
+        }
+    }
+}

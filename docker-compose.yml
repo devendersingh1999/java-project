@@ -1,0 +1,47 @@
+version: "3.9"
+
+services:
+  mysql:
+    container_name: mysql
+    image: mysql:8
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: s3
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  app:
+    container_name: app
+    image: devender1999/ci-cd:v1
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/s3
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      SERVER_PORT: 8081
+    ports:
+      - "9090:8081"
+    restart: always
+
+volumes:
+  mysql-data:
+
+
+# docker run -d \
+#   --name mysql \
+#   -e MYSQL_ROOT_PASSWORD=root \
+#   -e MYSQL_DATABASE=s3 \
+#   -v mysql-data:/var/lib/mysql \
+#   -p 3306:3306 \
+#   mysql:8
