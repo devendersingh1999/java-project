@@ -1,5 +1,10 @@
 pipeline {
     agent any
+    
+    options {
+        timestamps()
+        ansiColor('xterm')
+    }
     environment {
         DOCKERHUB_CREDENTIALS = 'dockerhub-cred'
         DOCKERHUB_USERNAME = 'devender1999'
@@ -46,7 +51,7 @@ pipeline {
             steps {
                 
                 sh """
-                cd kube 
+                cd kuber
                    sed -i 's|image: .*|image: ${IMAGE_NAME}:${env.IMAGE_TAG}|g' deployment.yaml
                 """
             }
