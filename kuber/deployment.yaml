@@ -40,3 +40,5 @@ spec:
   ports:
   - port: 80
     targetPort: 8081
+
+# k port-forward service/myapp-svc 8081:80 -n project

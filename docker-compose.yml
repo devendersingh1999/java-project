@@ -22,9 +22,8 @@ services:
   app:
     container_name: app
     image: devender1999/ci-cd:v1
-    depends_on:
-      mysql:
-        condition: service_healthy
+    user: "1001:1002"
+    restart: always
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/s3
       SPRING_DATASOURCE_USERNAME: root
@@ -32,7 +31,9 @@ services:
       SERVER_PORT: 8081
     ports:
       - "9090:8081"
-    restart: always
+    depends_on:
+      mysql:
+        condition: service_healthy
 
 volumes:
   mysql-data:
@@ -45,3 +46,4 @@ volumes:
 #   -v mysql-data:/var/lib/mysql \
 #   -p 3306:3306 \
 #   mysql:8
+
